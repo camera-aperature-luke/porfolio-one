@@ -5,6 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Luke Bultman</title>
   <link rel="stylesheet" href="style.css" />
+
+  <!-- Carousel styles: shows exactly 3 tiles in a row and hides the rest -->
+  <style>
+    .carousel {
+      --carousel-gap: 24px;          /* space between tiles */
+      overflow: hidden;              /* hides tiles 4, 5, ... off to the right */
+      padding: 8px 0;                /* room so card shadows aren't clipped */
+    }
+    .carousel .project-grid {
+      display: flex;                 /* overrides the grid layout in style.css */
+      flex-wrap: nowrap;
+      gap: var(--carousel-gap);
+      will-change: transform;
+    }
+    .carousel .project-card {
+      /* each tile is one third of the row, minus the two gaps */
+      flex: 0 0 calc((100% - 2 * var(--carousel-gap)) / 3);
+      min-width: 0;
+    }
+
+    /* Under 420px wide: stack every tile in one column and turn off the carousel */
+    @media (max-width: 419.98px) {
+      .carousel {
+        overflow: visible;
+      }
+      .carousel .project-grid {
+        flex-direction: column;
+        transform: none !important;  /* cancels any slide in progress */
+        transition: none !important;
+      }
+      .carousel .project-card {
+        flex: none;
+        width: 100%;
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -25,8 +61,10 @@
   <!-- ===================== MAIN ===================== -->
   <main>
 
-    <!-- Project Grid -->
+    <!-- Project Carousel -->
+    <!-- Only 3 cards show at a time; every 3 seconds they slide left and the next one comes in. -->
     <!-- To add more cards, copy one <a class="project-card"> block and paste it below -->
+    <div class="carousel">
     <div class="project-grid">
 
       <!-- ---- Project 1 ---- -->
@@ -117,7 +155,7 @@
         </div>
       </a>
 
-      
+    </div>
     </div>
   </main>
 
@@ -126,5 +164,73 @@
     &copy; 2026 Luke Bultman
   </footer>
 <!-- this is edits to the file to show how I'm doing things in a new branch -->
+
+  <!-- ===================== CAROUSEL SCRIPT ===================== -->
+  <script>
+    (function () {
+      const INTERVAL_MS = 3000;    // how often the tiles slide (3 seconds)
+      const SLIDE_MS = 800;        // how long the slide animation takes
+
+      const carousel = document.querySelector('.carousel');
+      const track = carousel && carousel.querySelector('.project-grid');
+      if (!track) return;
+
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const stackedView = window.matchMedia('(max-width: 419.98px)');  // must match the CSS breakpoint
+      const originalOrder = Array.from(track.querySelectorAll('.project-card'));
+      let paused = false;
+      let sliding = false;
+
+      // Put the tiles back in their original order (Project One first)
+      function resetOrder() {
+        track.style.transition = 'none';
+        track.style.transform = '';
+        originalOrder.forEach((card) => track.appendChild(card));
+        sliding = false;
+      }
+
+      // When the window is resized below 420px, stop the carousel and restore the order
+      stackedView.addEventListener('change', (e) => {
+        if (e.matches) resetOrder();
+      });
+
+      // Pause while someone is hovering over or tabbing through the tiles
+      carousel.addEventListener('mouseenter', () => { paused = true; });
+      carousel.addEventListener('mouseleave', () => { paused = false; });
+      carousel.addEventListener('focusin', () => { paused = true; });
+      carousel.addEventListener('focusout', () => { paused = false; });
+
+      function slideLeft() {
+        const cards = track.querySelectorAll('.project-card');
+        if (stackedView.matches || paused || sliding || document.hidden || cards.length <= 3) return;
+
+        const first = cards[0];
+        const gap = parseFloat(getComputedStyle(track).columnGap) || 0;
+        const distance = first.getBoundingClientRect().width + gap;
+
+        // People who turn off animations in their settings get an instant swap
+        if (reduceMotion) {
+          track.appendChild(first);
+          return;
+        }
+
+        sliding = true;
+        track.style.transition = 'transform ' + SLIDE_MS + 'ms ease';
+        track.style.transform = 'translateX(-' + distance + 'px)';
+
+        // After the slide, move the first tile to the end and snap back into place
+        setTimeout(() => {
+          if (stackedView.matches) return;  // window shrank mid-slide; resetOrder() already ran
+          track.style.transition = 'none';
+          track.appendChild(first);
+          track.style.transform = 'translateX(0)';
+          void track.offsetWidth;  // forces the browser to apply the reset before the next slide
+          sliding = false;
+        }, SLIDE_MS);
+      }
+
+      setInterval(slideLeft, INTERVAL_MS);
+    })();
+  </script>
 </body>
 </html>
