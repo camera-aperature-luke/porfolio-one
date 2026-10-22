@@ -1,0 +1,10 @@
+June 11, 2026
+
+
+I'm trying to figure out how to get things uploaded through GitHub pages (free) to set up a static website that I've got a repo for on GitHub.  I've tried setting up 2factor auth for Luke@lukebultman.com which is supposed to be the admin account I set up on admin.google.com but it just continues to tell me that I don't have access and give me this page
+
+https://access.workspace.google.com/u/1/remediate?urlparams=Aa6w02FnSecLwa3nvdpMdSdK9nrbhe6-2dNAgOVKlg55NpX6eQlmnogieVrECjybjXhOKHWEW_s291w9&continue=https://admin.google.com/?authuser%3D1%26utm_source%3Dog_am
+
+I pay $12 a year for the domain name and could just link it to a Wordpress site, but I'd rather have it be a static site that I can craft pages for.
+
+Claude tells me that I need to set my repo to public in order to do that.
